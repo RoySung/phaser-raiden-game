@@ -1,0 +1,33 @@
+{
+  "cSpell.words": ["Vitesse"],
+  "i18n-ally.keystyle": "nested",
+  "i18n-ally.localesPaths": "locales",
+  "i18n-ally.sortKeys": true,
+  "prettier.enable": false,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "volar.tsPlugin": true,
+  "volar.tsPluginStatus": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true,
+  },
+  "files.associations": {
+    "*.css": "postcss",
+  },
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#8cd954",
+    "activityBar.activeBorder": "#4884d6",
+    "activityBar.background": "#8cd954",
+    "activityBar.foreground": "#15202b",
+    "activityBar.inactiveForeground": "#15202b99",
+    "activityBarBadge.background": "#4884d6",
+    "activityBarBadge.foreground": "#e7e7e7",
+    "statusBar.background": "#71cd2d",
+    "statusBar.foreground": "#15202b",
+    "statusBarItem.hoverBackground": "#5aa324",
+    "titleBar.activeBackground": "#71cd2d",
+    "titleBar.activeForeground": "#15202b",
+    "titleBar.inactiveBackground": "#71cd2d99",
+    "titleBar.inactiveForeground": "#15202b99"
+  },
+  "peacock.color": "#71cd2d",
+}
