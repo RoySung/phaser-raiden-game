@@ -50,13 +50,10 @@ onMounted(() => {
 
 <template>
   <div id="app">
-    <button @click="watch">
-      Watch
-    </button>
   </div>
 </template>
 
 <route lang="yaml">
 meta:
-  layout: home
+  layout: default
 </route>
