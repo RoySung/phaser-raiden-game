@@ -108,10 +108,14 @@ class BeamSprite extends Phaser.GameObjects.Sprite {
     super(scene, x, y, Beam.Normal)
     scene.add.existing(this)
     this.play(Beam.Normal_Anims)
-    // scene.projectiles?.add(this)
+    scene.projectiles?.add(this)
+    scene.physics.world.enableBody(this)
 
-    console.log('🚀 ~ file: index.ts ~ line 115 ~ BeamSprite ~ constructor ~ this.body', this.body)
-    this.body.setVelocityX(-10)
+    this.body.velocity.y = -250
+  }
+
+  update() {
+    if (this.y < 32) this.destroy()
   }
 }
 
@@ -277,6 +281,9 @@ export class MainScene extends Phaser.Scene {
 
     this.handlePlayerMove()
     this.handlePlayerShoot()
+
+    const beams = this.projectiles?.getChildren()
+    beams?.forEach(beam => beam.update())
   }
 
   drawScoreText() {
@@ -290,8 +297,14 @@ export class MainScene extends Phaser.Scene {
   }
 
   handlePlayerShoot() {
-    const space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT)
-    if (Phaser.Input.Keyboard.JustDown(space)) this.shootBeam()
+    // FIXME: Space is not work
+    const space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE)
+    const j = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.J)
+    const shift = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT)
+    const keys = [space, j, shift]
+    keys.forEach((key) => {
+      if (Phaser.Input.Keyboard.JustDown(key)) this.shootBeam()
+    })
   }
 
   shootBeam() {
