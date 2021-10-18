@@ -1,5 +1,4 @@
 import Phaser from 'phaser'
-import logoImg from '/logo.png'
 import bgImg from '/images/background.png'
 import explosion from '/images/spritesheets/explosion.png'
 import powerupImg from '/images/spritesheets/power-up.png'
@@ -123,14 +122,16 @@ export class MainScene extends Phaser.Scene {
   powerupArr: Phaser.Physics.Arcade.Group | null = null
   player: Phaser.Physics.Arcade.Sprite | null = null
   projectiles: Phaser.GameObjects.Group | null = null
+  score = 0
+  scoreLabel: Phaser.GameObjects.BitmapText | null = null
 
   constructor(config: string | Phaser.Types.Scenes.SettingsConfig) {
     super(config)
   }
 
   preload() {
-    this.load.image('logo', logoImg)
     this.load.image(Constant.Background, bgImg)
+    this.load.bitmapFont('pixelFont', '/font/font.png', '/font/font.xml')
 
     this.load.spritesheet(Explosion.Normal, explosion, {
       frameWidth: 16,
@@ -172,10 +173,11 @@ export class MainScene extends Phaser.Scene {
     const config = this.game.config
     const width = Number(config.width)
     const height = Number(config.height)
-    this.add.image(0, 0, 'logo')
     // const bg = this.add.image(0, 0, Constant.Background)
     this.background = this.add.tileSprite(0, 0, width, height, Constant.Background)
     this.background.setOrigin(0, 0)
+
+    this.drawScoreText()
 
     // setup player
     this.anims.create({
@@ -275,6 +277,16 @@ export class MainScene extends Phaser.Scene {
 
     this.handlePlayerMove()
     this.handlePlayerShoot()
+  }
+
+  drawScoreText() {
+    const lengthFormat = (value: number, length: number) => {
+      return '0'.repeat(length - value.toString().length) + value
+    }
+    const formatedScore = lengthFormat(this.score, 6)
+    const text = `SCORE ${formatedScore}`
+    if (!this.scoreLabel) this.scoreLabel = this.add.bitmapText(10, 5, 'pixelFont', text, 16)
+    else this.scoreLabel.text = text
   }
 
   handlePlayerShoot() {
