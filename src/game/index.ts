@@ -108,7 +108,7 @@ class BeamSprite extends Phaser.GameObjects.Sprite {
     super(scene, x, y, Beam.Normal)
     scene.add.existing(this)
     this.play(Beam.Normal_Anims)
-    scene.projectiles?.add(this)
+    scene.projectileGroup?.add(this)
     scene.physics.world.enableBody(this)
 
     this.body.velocity.y = -250
@@ -119,13 +119,22 @@ class BeamSprite extends Phaser.GameObjects.Sprite {
   }
 }
 
+class ExplosionSprite extends Phaser.GameObjects.Sprite {
+  constructor(scene: MainScene, x: number, y: number) {
+    super(scene, x, y, Explosion.Normal)
+    scene.add.existing(this)
+    this.play(Explosion.Normal_Anims)
+  }
+}
+
 export class MainScene extends Phaser.Scene {
   gopher: dragonBones.phaser.display.ArmatureDisplay | null = null
   background: Phaser.GameObjects.TileSprite | null = null
   shipArr: Ship[] = []
-  powerupArr: Phaser.Physics.Arcade.Group | null = null
+  enemies: Phaser.Physics.Arcade.Group | null = null
+  powerupGroup: Phaser.Physics.Arcade.Group | null = null
   player: Phaser.Physics.Arcade.Sprite | null = null
-  projectiles: Phaser.GameObjects.Group | null = null
+  projectileGroup: Phaser.GameObjects.Group | null = null
   score = 0
   scoreLabel: Phaser.GameObjects.BitmapText | null = null
 
@@ -226,11 +235,11 @@ export class MainScene extends Phaser.Scene {
       repeat: -1,
     })
 
-    this.powerupArr = this.physics.add.group()
+    this.powerupGroup = this.physics.add.group()
     const maxPUCount = 4
     for (let i = 0; i < maxPUCount; i++) {
       const powerUp = this.physics.add.sprite(16, 16, PowerUp.Name)
-      this.powerupArr.add(powerUp)
+      this.powerupGroup.add(powerUp)
       powerUp.setRandomPosition(0, 0, width, height)
       if (Math.random() > 0.5) powerUp.play(PowerUp.Red_Anims)
       else powerUp.play(PowerUp.Gray_Anims)
@@ -241,6 +250,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     // setup ship animation
+    this.enemies = this.physics.add.group()
     shipsConfig.forEach((config, index) => {
       const sprite = this.add.sprite(width / 2 + index * 30, height / 2, config.key)
       const ship: Ship = {
@@ -257,12 +267,22 @@ export class MainScene extends Phaser.Scene {
       })
       sprite.play(config.animsKey)
       sprite.setInteractive()
-      this.resetShip(ship)
+      this.resetShip(ship.sprite)
+
+      this.enemies?.add(sprite)
     })
 
     this.input.on('gameobjectdown', this.destoryShip, this)
 
-    this.projectiles = this.add.group()
+    this.projectileGroup = this.add.group()
+    this.physics.add.collider(this.projectileGroup, this.powerupGroup, (projectile, powerup) => {
+      projectile.destroy()
+    })
+
+    this.physics.add.overlap(this.player, this.powerupGroup, this.pickPowerup, null, this)
+    this.physics.add.overlap(this.player, this.enemies, this.hurtPlayer, null, this)
+
+    this.physics.add.overlap(this.projectileGroup, this.enemies, this.hitEnemy, null, this)
 
     // this.ship0 = this.add.sprite()
 
@@ -280,10 +300,53 @@ export class MainScene extends Phaser.Scene {
     this.shipArr.forEach(ship => this.moveShip(ship))
 
     this.handlePlayerMove()
-    this.handlePlayerShoot()
+    if (this.player?.active) this.handlePlayerShoot()
 
-    const beams = this.projectiles?.getChildren()
+    const beams = this.projectileGroup?.getChildren()
     beams?.forEach(beam => beam.update())
+  }
+
+  pickPowerup(player: Phaser.GameObjects.GameObject, powerup: Phaser.GameObjects.GameObject) {
+    powerup.disableBody(true, true)
+  }
+
+  hurtPlayer(player: Phaser.GameObjects.GameObject, enemy: Phaser.GameObjects.GameObject) {
+    if (player.alpha < 1) return
+
+    player.disableBody(true, true)
+
+    this.resetShip(enemy)
+    const explosion = new ExplosionSprite(this, player.x, player.y)
+    this.resetPlayer()
+  }
+
+  resetPlayer() {
+    const config = this.game.config
+    const width = Number(config.width)
+    const height = Number(config.height)
+    const x = width / 2 - 8
+    const y = height + 64
+
+    this.player?.enableBody(true, x, y, true, true)
+    // @ts-ignore
+    this.player.alpha = 0.5
+    const tween = this.tweens.add({
+      targets: this.player,
+      y: height - 64,
+      ease: 'Power1',
+      duration: 1500,
+      repeat: 0,
+      onComplete: () => this.player.alpha = 1,
+    })
+  }
+
+  hitEnemy(projectile: Phaser.GameObjects.GameObject, enemy: Phaser.GameObjects.GameObject) {
+    projectile.destroy()
+    const x = parseInt(enemy.x)
+    const y = parseInt(enemy.y)
+    this.resetShip(enemy)
+
+    const explosion = new ExplosionSprite(this, x, y)
   }
 
   drawScoreText() {
@@ -314,9 +377,14 @@ export class MainScene extends Phaser.Scene {
   handlePlayerMove() {
     const left = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A)
     const right = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
+    const up = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
+    const down = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S)
 
     if (left.isDown) this.player?.setVelocityX(-playerConfig.speed)
     else if (right.isDown) this.player?.setVelocityX(playerConfig.speed)
+
+    if (up.isDown) this.player?.setVelocityY(-playerConfig.speed)
+    else if (down.isDown) this.player?.setVelocityY(playerConfig.speed)
   }
 
   moveShip(ship: Ship) {
@@ -324,14 +392,13 @@ export class MainScene extends Phaser.Scene {
     sprite.y += config.speed
     const height = this.game.config.height
     if (sprite.y > height)
-      this.resetShip(ship)
+      this.resetShip(ship.sprite)
   }
 
-  resetShip(ship: Ship) {
-    const { sprite } = ship
+  resetShip(shipSprite: Phaser.GameObjects.Sprite) {
     const width = Number(this.game.config.width)
-    sprite.y = 0
-    sprite.x = Phaser.Math.Between(0, width)
+    shipSprite.y = 0
+    shipSprite.x = Phaser.Math.Between(0, width)
   }
 
   destoryShip(pointer: any, gameObject: Phaser.GameObjects.Sprite) {
