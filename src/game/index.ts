@@ -137,6 +137,7 @@ export class MainScene extends Phaser.Scene {
   projectileGroup: Phaser.GameObjects.Group | null = null
   score = 0
   scoreLabel: Phaser.GameObjects.BitmapText | null = null
+  adjustScale = 2
 
   constructor(config: string | Phaser.Types.Scenes.SettingsConfig) {
     super(config)
@@ -201,6 +202,7 @@ export class MainScene extends Phaser.Scene {
     })
 
     this.player = this.physics.add.sprite(width / 2, height / 2 + 50, Player.Normal)
+    this.player.setScale(this.adjustScale)
     this.player.play(Player.Normal_Anims)
     this.player.setCollideWorldBounds(true)
 
@@ -239,12 +241,13 @@ export class MainScene extends Phaser.Scene {
     const maxPUCount = 4
     for (let i = 0; i < maxPUCount; i++) {
       const powerUp = this.physics.add.sprite(16, 16, PowerUp.Name)
+      powerUp.setScale(this.adjustScale)
       this.powerupGroup.add(powerUp)
       powerUp.setRandomPosition(0, 0, width, height)
       if (Math.random() > 0.5) powerUp.play(PowerUp.Red_Anims)
       else powerUp.play(PowerUp.Gray_Anims)
 
-      powerUp.setVelocity(100, 100)
+      powerUp.setVelocity(100 * this.adjustScale, 100 * this.adjustScale)
       powerUp.setCollideWorldBounds(true)
       powerUp.setBounce(1)
     }
@@ -253,6 +256,7 @@ export class MainScene extends Phaser.Scene {
     this.enemies = this.physics.add.group()
     shipsConfig.forEach((config, index) => {
       const sprite = this.add.sprite(width / 2 + index * 30, height / 2, config.key)
+      sprite.setScale(this.adjustScale)
       const ship: Ship = {
         config,
         sprite,
@@ -372,6 +376,7 @@ export class MainScene extends Phaser.Scene {
 
   shootBeam() {
     const beam = new BeamSprite(this)
+    beam.setScale(this.adjustScale)
   }
 
   handlePlayerMove() {
@@ -380,16 +385,16 @@ export class MainScene extends Phaser.Scene {
     const up = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
     const down = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S)
 
-    if (left.isDown) this.player?.setVelocityX(-playerConfig.speed)
-    else if (right.isDown) this.player?.setVelocityX(playerConfig.speed)
+    if (left.isDown) this.player?.setVelocityX(-playerConfig.speed * this.adjustScale)
+    else if (right.isDown) this.player?.setVelocityX(playerConfig.speed * this.adjustScale)
 
-    if (up.isDown) this.player?.setVelocityY(-playerConfig.speed)
-    else if (down.isDown) this.player?.setVelocityY(playerConfig.speed)
+    if (up.isDown) this.player?.setVelocityY(-playerConfig.speed * this.adjustScale)
+    else if (down.isDown) this.player?.setVelocityY(playerConfig.speed * this.adjustScale)
   }
 
   moveShip(ship: Ship) {
     const { sprite, config } = ship
-    sprite.y += config.speed
+    sprite.y += config.speed * this.adjustScale
     const height = this.game.config.height
     if (sprite.y > height)
       this.resetShip(ship.sprite)
@@ -420,8 +425,8 @@ export class MainScene extends Phaser.Scene {
 const config = {
   type: Phaser.AUTO,
   parent: 'app',
-  width: 256,
-  height: 272,
+  width: 800,
+  height: 850,
   plugins: {
     scene: [
       { key: 'DragonBones', plugin: DragonBones.phaser.plugin.DragonBonesScenePlugin, mapping: 'dragonbone' }, // setup DB plugin
